@@ -48,7 +48,6 @@ public class SimpleJmsTest {
         @Bean
         public ConnectionFactory connectionFactory() {
             return new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false&broker.useShutdownHook=false");
-
         }
 
         @Bean
