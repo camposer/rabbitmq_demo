@@ -1,55 +1,49 @@
 package com.example.rabbitmq;
 
+import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.core.JmsTemplate;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.TextMessage;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
-public class RabbitmqApplication {
+public class RabbitmqApplication implements CommandLineRunner {
+	@Autowired
+	ConnectionFactory connectionFactory;
 
-	static final String topicExchangeName = "spring-boot-exchange";
-
-	static final String queueName = "spring-boot";
-
-	@Bean
-	Queue queue() {
-		return new Queue(queueName, false);
-	}
-
-	@Bean
-	TopicExchange exchange() {
-		return new TopicExchange(topicExchangeName);
-	}
-
-	@Bean
-	Binding binding(Queue queue, TopicExchange exchange) {
-		return BindingBuilder.bind(queue).to(exchange).with("foo.bar.#");
-	}
-
-	@Bean
-	SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
-											 MessageListenerAdapter listenerAdapter) {
-		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-		container.setConnectionFactory(connectionFactory);
-		container.setQueueNames(queueName);
-		container.setMessageListener(listenerAdapter);
-		return container;
-	}
-
-	@Bean
-	MessageListenerAdapter listenerAdapter(Receiver receiver) {
-		return new MessageListenerAdapter(receiver, "receiveMessage");
-	}
+	@Autowired
+	Listener listener;
 
 	public static void main(String[] args) throws InterruptedException {
 		SpringApplication.run(RabbitmqApplication.class, args).close();
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		Connection clientConnection = connectionFactory.createConnection();
+		clientConnection.start();
+		String messageContent = UUID.randomUUID().toString();
+
+		JmsTemplate tpl = new JmsTemplate(connectionFactory);
+		tpl.setReceiveTimeout(2000);
+		tpl.send("demoqueue", session -> {
+			TextMessage message = session.createTextMessage(messageContent);
+			message.setJMSCorrelationID(messageContent);
+			return message;
+		});
+
+		listener.getLatch().await(10000, TimeUnit.MILLISECONDS);
+		clientConnection.close();
 	}
 }
