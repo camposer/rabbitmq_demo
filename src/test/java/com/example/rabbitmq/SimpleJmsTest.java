@@ -11,9 +11,12 @@ import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.jms.ConnectionFactory;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -51,21 +54,41 @@ public class SimpleJmsTest {
         }
 
         @Bean
-        public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
-            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-            factory.setConnectionFactory(connectionFactory);
-            return factory;
+        public DefaultMessageListenerContainer jmsContainer(ConnectionFactory connectionFactory, MessageListener messageListener) {
+            DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
+            container.setConnectionFactory(connectionFactory);
+            container.setDestinationName(destinationName);
+            container.setMessageListener(messageListener);
+            return container;
         }
 
-        @Bean
-        public Object listener() {
-            return new Object() {
-                @JmsListener(destination = destinationName)
-                public void receiveMessage(String msg) {
+        @Bean // You want to return your bean here!!!
+        public MessageListener messageListener() {
+            return new MessageListener() {
+                @Override
+                public void onMessage(Message msg) {
                     System.out.println("******************* Received: " + msg);
                     latch.countDown();
                 }
             };
         }
+
+//        @Bean
+//        public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
+//            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+//            factory.setConnectionFactory(connectionFactory);
+//            return factory;
+//        }
+//
+//        @Bean
+//        public Object listener() {
+//            return new Object() {
+//                @JmsListener(destination = destinationName)
+//                public void receiveMessage(String msg) {
+//                    System.out.println("******************* Received: " + msg);
+//                    latch.countDown();
+//                }
+//            };
+//        }
     }
 }
