@@ -10,6 +10,8 @@ import javax.jms.ConnectionFactory;
 @Configuration
 @EnableJms
 public class JmsConfig {
+    public static final String QUEUE_NAME = "demoqueue";
+
     @Bean
     public ConnectionFactory jmsConnectionFactory() {
         RMQConnectionFactory connectionFactory = new RMQConnectionFactory();

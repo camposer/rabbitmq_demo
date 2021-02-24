@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="refresh" content="5">
+    <title>Simple e2e test</title>
+    <style>
+        ul.no-bullets {
+            padding: 0;
+            list-style-type: none;
+        }
+    </style>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <h1>Simple e2e test</h1><h2>Send model</h2>
+    <form action="/process" method="post">
+        <ul class="no-bullets">
+            <li>
+                <textarea type="text" name="message" rows="4" cols="50">
+{
+  "name": "OFS",
+  "type": "Order"
+}
+                </textarea>
+            </li>
+            <li><input type="submit" value="send"/></li>
+        </ul>
+    </form>
+    <h2>Received messages (models)</h2>
+    <p th:if="${receivedModels.size == 0}">No messages... yet</p>
+    <table th:if="${receivedModels.size > 0}">
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+        </tr>
+        <tr th:each="model: ${receivedModels}">
+            <td th:text="${model.name}" />
+            <td th:text="${model.type}" />
+        </tr>
+    </table>
+    <h2>Important</h2>
+    <ul>
+        <li>The message/model to be sent should be compliant with the sample schema</li>
+        <li>This page refreshes automatically every 5 seconds</li>
+    </ul>
+</body>
+</html>
