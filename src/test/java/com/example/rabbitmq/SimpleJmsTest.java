@@ -5,27 +5,27 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.jms.ConnectionFactory;
-import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@ExtendWith(SpringExtension.class)
+//@ExtendWith(SpringExtension.class)
+@SpringBootTest
 public class SimpleJmsTest {
     static final String destinationName = "testqueue";
-    static final CountDownLatch latch = new CountDownLatch(1);
 
     @Autowired
     ConnectionFactory connectionFactory;
@@ -41,11 +41,11 @@ public class SimpleJmsTest {
             return message;
         });
 
-        latch.await(2000, TimeUnit.MILLISECONDS);
-        Assertions.assertEquals(0, latch.getCount());
+        SimpleJmsMessageListener.latch.await(2000, TimeUnit.MILLISECONDS);
+        Assertions.assertEquals(0, SimpleJmsMessageListener.latch.getCount());
     }
 
-    @Configuration
+    @TestConfiguration
     @EnableJms
     static class Config {
         @Bean
@@ -62,23 +62,23 @@ public class SimpleJmsTest {
             return container;
         }
 
-        @Bean // You want to return your bean here!!!
-        public MessageListener messageListener() {
-            return new MessageListener() {
-                @Override
-                public void onMessage(Message msg) {
-                    System.out.println("******************* Received: " + msg);
-                    latch.countDown();
-                }
-            };
-        }
-
-//        @Bean
-//        public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
-//            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-//            factory.setConnectionFactory(connectionFactory);
-//            return factory;
+//        @Bean // You want to return your bean here!!!
+//        public MessageListener messageListener() {
+//            return new MessageListener() {
+//                @Override
+//                public void onMessage(Message msg) {
+//                    System.out.println("******************* Received: " + msg);
+//                    latch.countDown();
+//                }
+//            };
 //        }
+
+        @Bean
+        public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
+            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+            factory.setConnectionFactory(connectionFactory);
+            return factory;
+        }
 //
 //        @Bean
 //        public Object listener() {

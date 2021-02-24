@@ -29,10 +29,9 @@ public class OfsController {
     }
 
     @RequestMapping(value = "/process", method = RequestMethod.POST)
-    public String process(@RequestParam String message, Model viewModel) throws JsonProcessingException {
+    public String process(@RequestParam String message) throws JsonProcessingException {
         OfsModel ofsModel = ofsModelFromMessage(message);
         sendModel(ofsModel);
-        prepareViewModel(viewModel);
         return "redirect:/index";
     }
 

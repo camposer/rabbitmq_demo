@@ -1,9 +1,12 @@
 package com.example.rabbitmq;
 
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
 
 import javax.jms.ConnectionFactory;
 
@@ -13,13 +16,12 @@ public class JmsConfig {
     public static final String QUEUE_NAME = "demoqueue";
 
     @Bean
-    public ConnectionFactory jmsConnectionFactory() {
-        RMQConnectionFactory connectionFactory = new RMQConnectionFactory();
-        connectionFactory.setUsername("guest");
-        connectionFactory.setPassword("guest");
-        connectionFactory.setVirtualHost("/");
-        connectionFactory.setHost("localhost");
-        connectionFactory.setPort(5672);
-        return connectionFactory;
+    public JmsListenerContainerFactory<?> myFactory(ConnectionFactory connectionFactory,
+                                                    DefaultJmsListenerContainerFactoryConfigurer configurer) {
+        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        // This provides all boot's default to this factory, including the message converter
+        configurer.configure(factory, connectionFactory);
+        // You could still override some of Boot's default if necessary.
+        return factory;
     }
 }
