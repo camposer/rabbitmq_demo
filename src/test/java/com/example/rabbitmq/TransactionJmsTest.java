@@ -2,17 +2,26 @@ package com.example.rabbitmq;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jms.JmsException;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.connection.JmsTransactionManager;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ErrorHandler;
 
 import javax.jms.*;
 import java.io.Serializable;
@@ -21,26 +30,23 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @ExtendWith(SpringExtension.class)
-public class MessageSelectorJmsTest {
+public class TransactionJmsTest {
     static final String destinationName = "testqueue";
     static final CountDownLatch latch = new CountDownLatch(1);
+
+    static boolean failedOnFirstCall = false;
 
     @Autowired
     ConnectionFactory connectionFactory;
 
     @Test
+    @Disabled
     public void test() throws Exception {
         String messageContent = UUID.randomUUID().toString();
 
         JmsTemplate tpl = new JmsTemplate(connectionFactory);
         tpl.send(destinationName, session -> {
-            ObjectMessage message = session.createObjectMessage(new TestMessage(1L, "one"));
-            message.setJMSCorrelationID(messageContent);
-            message.setStringProperty("type", "test"); // property to be used by the selector
-            return message;
-        });
-        tpl.send(destinationName, session -> { // message to be ignored
-            ObjectMessage message = session.createObjectMessage(new TestMessage(2L, "two"));
+            TextMessage message = session.createTextMessage(messageContent);
             message.setJMSCorrelationID(messageContent);
             return message;
         });
@@ -65,27 +71,51 @@ public class MessageSelectorJmsTest {
             container.setConnectionFactory(connectionFactory);
             container.setDestinationName(destinationName);
             container.setMessageListener(messageListener);
-            container.setMessageSelector("type='test'");
             return container;
         }
+
+        @Bean
+        public JmsListenerContainerFactory<?> jmsListenerContainerFactory(
+                ConnectionFactory connectionFactory,
+                //DefaultJmsListenerContainerFactoryConfigurer configurer,
+                PlatformTransactionManager transactionManager
+        ) {
+            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+            //configurer.configure(factory, connectionFactory);
+            factory.setTransactionManager(transactionManager);
+            return factory;
+        }
+
+        @Bean
+        public DefaultJmsListenerContainerFactoryConfigurer jmsListenerContainerFactoryConfigurer() {
+            return new DefaultJmsListenerContainerFactoryConfigurer();
+        }
+
+        @Bean
+        public PlatformTransactionManager transactionManager(ConnectionFactory connectionFactory) {
+            JmsTransactionManager transactionManager = new JmsTransactionManager();
+            transactionManager.setConnectionFactory(connectionFactory);
+            return transactionManager;
+        }
+
 
         @Bean
         public MessageListener messageListener() {
             return new MessageListener() {
                 @Override
+                @Transactional
                 public void onMessage(Message msg) {
+                    if (!failedOnFirstCall) {
+                        failedOnFirstCall = true;
+                        throw new JmsException("Error processing this message!!!") {
+                        };
+                    }
+
                     System.out.println("******************* Received: " + msg);
                     latch.countDown();
                 }
             };
         }
-
-//        @Bean
-//        public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
-//            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-//            factory.setConnectionFactory(connectionFactory);
-//            return factory;
-//        }
     }
 
     static class TestMessage implements Serializable {
