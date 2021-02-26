@@ -7,10 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.jms.JmsException;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
@@ -19,18 +17,18 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ErrorHandler;
 
-import javax.jms.*;
+import javax.jms.ConnectionFactory;
+import javax.jms.Message;
+import javax.jms.TextMessage;
 import java.io.Serializable;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @ExtendWith(SpringExtension.class)
-@Disabled 
+@Disabled
 public class TransactionJmsTest {
     static final String destinationName = "testqueue";
     static final CountDownLatch latch = new CountDownLatch(1);
