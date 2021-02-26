@@ -17,8 +17,5 @@ java -jar target/xxx
 
 # Send info via cURL
 ```
-curl -X POST \ 
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    --data-urlencode "message=$(cat target/model.txt)" \ 
-    http://localhost:8080/process
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode "message=$(cat target/model.txt)" http://localhost:8080/process
 ```
