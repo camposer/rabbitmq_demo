@@ -17,12 +17,12 @@ import java.io.*;
 import java.util.UUID;
 
 @Controller
-public class OfsController {
+public class WebController {
     @Autowired
     ConnectionFactory connectionFactory;
 
     @Autowired
-    OfsModelRepository ofsModelRepository;
+    MessageRepository messageRepository;
 
     @RequestMapping(value = "/index", method = RequestMethod.GET)
     public String index(Model viewModel) {
@@ -32,19 +32,16 @@ public class OfsController {
 
     @RequestMapping(value = "/process", method = RequestMethod.POST)
     public String process(@RequestParam String message) throws IOException, ClassNotFoundException {
-        //OfsModel ofsModel = ofsModelFromMessage(message);
         Serializable model = ofsModelFromBinary(message);
         sendModel(model);
         return "redirect:/index";
     }
 
     private Serializable ofsModelFromBinary(String message) throws IOException, ClassNotFoundException {
-        // Reading the object from a file
         try (
                 InputStream is = new ByteArrayInputStream(Base64.decodeBase64(message)); // TODO Make this code easier to understand!!
                 ObjectInputStream in = new ObjectInputStream(is)
         ) {
-            // Method for deserialization of object
             return (Serializable) in.readObject();
         }
     }
@@ -65,6 +62,6 @@ public class OfsController {
     }
 
     private void prepareViewModel(Model model) {
-        model.addAttribute("receivedModels", ofsModelRepository.findAll());
+        model.addAttribute("receivedMessages", messageRepository.findAll());
     }
 }

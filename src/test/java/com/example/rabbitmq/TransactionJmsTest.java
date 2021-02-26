@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @ExtendWith(SpringExtension.class)
+@Disabled 
 public class TransactionJmsTest {
     static final String destinationName = "testqueue";
     static final CountDownLatch latch = new CountDownLatch(1);
@@ -40,7 +41,6 @@ public class TransactionJmsTest {
     ConnectionFactory connectionFactory;
 
     @Test
-    @Disabled
     public void test() throws Exception {
         String messageContent = UUID.randomUUID().toString();
 
@@ -100,15 +100,14 @@ public class TransactionJmsTest {
 
 
         @Bean
-        public MessageListener messageListener() {
-            return new MessageListener() {
+        public javax.jms.MessageListener messageListener() {
+            return new javax.jms.MessageListener() {
                 @Override
                 @Transactional
                 public void onMessage(Message msg) {
                     if (!failedOnFirstCall) {
                         failedOnFirstCall = true;
-                        throw new JmsException("Error processing this message!!!") {
-                        };
+                        throw new RuntimeException("Error processing this message!!!");
                     }
 
                     System.out.println("******************* Received: " + msg);

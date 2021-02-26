@@ -2,20 +2,16 @@ package com.example.rabbitmq;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageListener;
@@ -25,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 //@ExtendWith(SpringExtension.class)
 @SpringBootTest
+@ActiveProfiles("simpleJmsTest")
 public class SimpleJmsTest {
     static final String destinationName = "testqueue";
 
@@ -32,7 +29,6 @@ public class SimpleJmsTest {
     ConnectionFactory connectionFactory;
 
     @Test
-    @Disabled
     public void test() throws Exception {
         String messageContent = UUID.randomUUID().toString();
 
@@ -43,7 +39,7 @@ public class SimpleJmsTest {
             return message;
         });
 
-        SimpleJmsMessageListener.latch.await(2000, TimeUnit.MILLISECONDS);
+        SimpleJmsMessageListener.latch.await(5000, TimeUnit.MILLISECONDS);
         Assertions.assertEquals(0, SimpleJmsMessageListener.latch.getCount());
     }
 

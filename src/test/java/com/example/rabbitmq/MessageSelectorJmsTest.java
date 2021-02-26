@@ -1,6 +1,5 @@
 package com.example.rabbitmq;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -13,7 +12,6 @@ import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
@@ -33,14 +31,14 @@ public class MessageSelectorJmsTest {
     ConnectionFactory connectionFactory;
 
     @Test
-    @Disabled
     public void test() throws Exception {
         String messageContent = UUID.randomUUID().toString();
 
         JmsTemplate tpl = new JmsTemplate(connectionFactory);
         tpl.send(destinationName, session -> { // message to be ignored
-            ObjectMessage message = session.createObjectMessage(new TestMessage(2L, "two"));
+            ObjectMessage message = session.createObjectMessage(new TestMessage(1L, "one"));
             message.setJMSCorrelationID(messageContent);
+            message.setStringProperty("type", "test"); // matches message selector
             return message;
         });
         tpl.send(destinationName, session -> { // message to be ignored
@@ -49,7 +47,7 @@ public class MessageSelectorJmsTest {
             return message;
         });
 
-        latch.await(2000, TimeUnit.MILLISECONDS);
+        latch.await(5000, TimeUnit.MILLISECONDS);
         Assertions.assertEquals(0, latch.getCount());
     }
 
@@ -71,11 +69,6 @@ public class MessageSelectorJmsTest {
             container.setMessageListener(messageListener);
             container.setMessageSelector("type='test'");
             return container;
-        }
-
-        @Bean
-        public TransactionalService failingService(ConnectionFactory connectionFactory) {
-            return new TransactionalService(connectionFactory);
         }
 
         @Bean
@@ -113,25 +106,6 @@ public class MessageSelectorJmsTest {
 
         public void setName(String name) {
             this.name = name;
-        }
-    }
-
-    static class TransactionalService {
-        private ConnectionFactory connectionFactory;
-
-        public TransactionalService(ConnectionFactory connectionFactory) {
-            this.connectionFactory = connectionFactory;
-        }
-
-        @Transactional
-        public void sendAndFail() {
-            JmsTemplate tpl = new JmsTemplate(connectionFactory);
-            tpl.send(destinationName, session -> {
-                ObjectMessage message = session.createObjectMessage(new TestMessage(1L, "one"));
-                message.setJMSCorrelationID(UUID.randomUUID().toString());
-                message.setStringProperty("type", "test"); // property to be used by the selector
-                return message;
-            });
         }
     }
 }

@@ -8,6 +8,9 @@
             padding: 0;
             list-style-type: none;
         }
+
+        table.alternate-row-colors tr:nth-child(even) {background: #CCC}
+        table.alternate-row-colors tr:nth-child(odd) {background: #FFF}
     </style>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
@@ -17,30 +20,25 @@
         <ul class="no-bullets">
             <li>
                 <textarea type="text" name="message" rows="4" cols="50">
-{
-  "name": "OFS",
-  "type": "Order"
-}
+rO0ABXNyAB1jb20uZXhhbXBsZS5yYWJiaXRtcS5PZnNNb2RlbH9LjiFIjb+VAgACTAAEbmFtZXQAEkxqYXZhL2xhbmcvU3RyaW5nO0wABHR5cGVxAH4AAXhwdAADb25ldAAEdHlwZQ==
                 </textarea>
             </li>
             <li><input type="submit" value="send"/></li>
         </ul>
     </form>
     <h2>Received messages (models)</h2>
-    <p th:if="${receivedModels.size == 0}">No messages... yet</p>
-    <table th:if="${receivedModels.size > 0}">
+    <p th:if="${receivedMessages.size == 0}">No messages... yet</p>
+    <table class="alternate-row-colors" th:if="${receivedMessages.size > 0}">
         <tr>
-            <th>Name</th>
-            <th>Type</th>
+            <th>JMS Message</th>
         </tr>
-        <tr th:each="model: ${receivedModels}">
-            <td th:text="${model.name}" />
-            <td th:text="${model.type}" />
+        <tr th:each="message: ${receivedMessages}">
+            <td th:text="${message}" />
         </tr>
     </table>
     <h2>Important</h2>
     <ul>
-        <li>The message/model to be sent should be compliant with the sample schema</li>
+        <li>The message/model to be sent could be any serialized object in base64</li>
         <li>This page refreshes automatically every 10 seconds</li>
     </ul>
 </body>
